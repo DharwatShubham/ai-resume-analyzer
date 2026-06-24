@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>AI Resume Analyzer Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div class="container py-5">
+
+    <!-- Header -->
+
+    <div class="text-center mb-5">
+
+        <h1 class="display-4 fw-bold text-primary">
+
+            <i class="bi bi-robot"></i>
+
+            AI Resume Analyzer
+
+        </h1>
+
+        <p class="text-muted fs-5">
+
+            Smart ATS Resume Analysis powered by Gemini AI
+
+        </p>
+
+    </div>
+
+    <!-- Score Cards -->
+
+    <div class="row g-4">
+
+        <!-- Resume Score -->
+
+        <div class="col-lg-4">
+
+            <div class="dashboard-card text-center">
+
+                <i class="bi bi-award-fill display-4 text-success"></i>
+
+                <h5 class="mt-3">Resume Score</h5>
+
+                <h1 class="display-4 fw-bold text-success"
+                    th:text="${result.score} + '%'">
+                </h1>
+
+                <div class="progress mt-3">
+
+                    <div class="progress-bar bg-success"
+
+                         th:style="'width:'+${result.score}+'%'">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ATS Score -->
+
+        <div class="col-lg-4">
+
+            <div class="dashboard-card text-center">
+
+                <i class="bi bi-speedometer2 display-4 text-warning"></i>
+
+                <h5 class="mt-3">ATS Match</h5>
+
+                <h1 class="display-4 fw-bold text-warning"
+
+                    th:text="${atsResult.matchScore} + '%'">
+
+                </h1>
+
+                <div class="progress mt-3">
+
+                    <div class="progress-bar bg-warning"
+
+                         th:style="'width:'+${atsResult.matchScore}+'%'">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Recommended Role -->
+
+        <div class="col-lg-4">
+
+            <div class="dashboard-card text-center">
+
+                <i class="bi bi-briefcase-fill display-4 text-primary"></i>
+
+                <h5 class="mt-3">
+
+                    Recommended Role
+
+                </h5>
+
+                <h4 class="fw-bold text-primary"
+
+                    th:text="${#lists.isEmpty(result.recommendedJobs) ? 'No Recommendation' : result.recommendedJobs[0]}">
+
+                </h4>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Charts -->
+
+    <div class="row mt-4">
+
+        <div class="col-lg-6">
+
+            <div class="dashboard-card">
+
+                <h4>
+
+                    <i class="bi bi-pie-chart-fill"></i>
+
+                    Resume Score
+
+                </h4>
+
+                <canvas id="scoreChart"></canvas>
+
+            </div>
+
+        </div>
+
+        <div class="col-lg-6">
+
+            <div class="dashboard-card">
+
+                <h4>
+
+                    <i class="bi bi-bar-chart-fill"></i>
+
+                    ATS Match
+
+                </h4>
+
+                <canvas id="atsChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Main Content -->
+
+    <div class="row mt-4">
+
+        <!-- Left Side -->
+
+        <div class="col-lg-8">
+
+            <!-- Uploaded File -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4>
+
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+
+                    Uploaded Resume
+
+                </h4>
+
+                <p class="mt-3">
+
+                    <strong>File :</strong>
+
+                    <span th:text="${result.fileName}"></span>
+
+                </p>
+
+            </div>
+
+            <!-- Job Description -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4>
+
+                    <i class="bi bi-file-text-fill"></i>
+
+                    Job Description
+
+                </h4>
+
+                <div class="resume-box mt-3">
+
+                    <pre th:text="${jobDescription}"></pre>
+
+                </div>
+
+            </div>
+
+            <!-- AI Review -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4>
+
+                    <i class="bi bi-stars"></i>
+
+                    Gemini AI Review
+
+                </h4>
+
+                <div class="resume-box mt-3">
+
+                    <pre th:text="${aiResponse}"></pre>
+
+                </div>
+
+            </div>
+                        <!-- Matching Skills -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4 class="text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Matching Skills
+                </h4>
+
+                <div class="mt-3">
+
+                    <span class="badge skill-success"
+                          th:each="skill : ${atsResult.matchedSkills}"
+                          th:text="${skill}">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- Missing Skills -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4 class="text-danger">
+                    <i class="bi bi-x-circle-fill"></i>
+                    Missing Skills
+                </h4>
+
+                <div class="mt-3">
+
+                    <span class="badge skill-danger"
+                          th:each="skill : ${atsResult.missingSkills}"
+                          th:text="${skill}">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- Resume -->
+
+            <div class="dashboard-card">
+
+                <h4>
+
+                    <i class="bi bi-file-earmark-text-fill"></i>
+
+                    Extracted Resume
+
+                </h4>
+
+                <div class="resume-box mt-3">
+
+                    <pre th:text="${result.resumeText}"></pre>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Right Column -->
+
+        <div class="col-lg-4">
+
+            <!-- ATS Suggestions -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4 class="text-warning">
+
+                    <i class="bi bi-lightbulb-fill"></i>
+
+                    ATS Suggestions
+
+                </h4>
+
+                <ul class="mt-3">
+
+                    <li th:each="s : ${atsResult.suggestions}"
+                        th:text="${s}">
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- Resume Strengths -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4 class="text-success">
+
+                    <i class="bi bi-emoji-smile-fill"></i>
+
+                    Resume Strengths
+
+                </h4>
+
+                <ul>
+
+                    <li th:each="s : ${feedback.strengths}"
+                        th:text="${s}">
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- Resume Weaknesses -->
+
+            <div class="dashboard-card mb-4">
+
+                <h4 class="text-danger">
+
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    Resume Weaknesses
+
+                </h4>
+
+                <ul>
+
+                    <li th:each="w : ${feedback.weaknesses}"
+                        th:text="${w}">
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- Quick Summary -->
+
+            <div class="dashboard-card">
+
+                <h4>
+
+                    <i class="bi bi-clipboard-data-fill"></i>
+
+                    Analysis Summary
+
+                </h4>
+
+                <table class="table mt-3">
+
+                    <tr>
+                        <th>Resume Score</th>
+                        <td th:text="${result.score}+'%'"></td>
+                    </tr>
+
+                    <tr>
+                        <th>ATS Match</th>
+                        <td th:text="${atsResult.matchScore}+'%'"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Skills Found</th>
+                        <td th:text="${#lists.size(result.detectedSkills)}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Missing Skills</th>
+                        <td th:text="${#lists.size(atsResult.missingSkills)}"></td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+
+    <div class="text-center mt-5">
+
+        <a href="/"
+           class="btn btn-primary btn-lg px-5">
+
+            <i class="bi bi-arrow-repeat"></i>
+
+            Analyze Another Resume
+
+        </a>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script th:inline="javascript">
+
+const resumeScore = /*[[${result.score}]]*/ 0;
+const atsScore = /*[[${atsResult.matchScore}]]*/ 0;
+
+/* Resume Score */
+
+new Chart(document.getElementById("scoreChart"),{
+
+type:"doughnut",
+
+data:{
+
+labels:["Score","Remaining"],
+
+datasets:[{
+
+data:[resumeScore,100-resumeScore],
+
+backgroundColor:[
+"#198754",
+"#E9ECEF"
+],
+
+borderWidth:0
+
+}]
+
+},
+
+options:{
+
+cutout:"75%",
+
+plugins:{
+
+legend:{
+display:false
+}
+
+}
+
+}
+
+});
+
+/* ATS */
+
+new Chart(document.getElementById("atsChart"),{
+
+type:"bar",
+
+data:{
+
+labels:["ATS Match"],
+
+datasets:[{
+
+data:[atsScore],
+
+backgroundColor:"#ffc107",
+
+borderRadius:12
+
+}]
+
+},
+
+options:{
+
+plugins:{
+
+legend:{
+display:false
+}
+
+},
+
+scales:{
+
+y:{
+
+beginAtZero:true,
+
+max:100
+
+}
+
+}
+
+}
+
+});
+
+</script>
+
+</body>
+
+</html>
